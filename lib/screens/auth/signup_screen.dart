@@ -1,28 +1,40 @@
-import 'package:firebase_auth_app/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 import '../profile/profile_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _auth = AuthService();
 
-  Future<void> _signin() async {
-    final user = await _auth.signIn(
+  final _auth = AuthService();
+  final _firestore = FirestoreService();
+
+  Future<void> _signup() async {
+    final user = await _auth.signUp(
       _emailCtrl.text.trim(),
       _passCtrl.text.trim(),
     );
 
     if (user != null) {
+      await _firestore.saveUser(
+        UserModel(
+          uid: user.uid,
+          name: _nameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+        ),
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => ProfileScreen(uid: user.uid)),
@@ -33,11 +45,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Sign In")),
+      appBar: AppBar(title: const Text("Sign Up")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
             TextField(
               controller: _emailCtrl,
               decoration: const InputDecoration(labelText: "Email"),
@@ -48,15 +64,9 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _signin, child: const Text("Login")),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => SignupScreen()),
-                );
-              },
-              child: const Text("Create new account"),
+            ElevatedButton(
+              onPressed: _signup,
+              child: const Text("Create Account"),
             ),
           ],
         ),
